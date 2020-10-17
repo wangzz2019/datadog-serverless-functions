@@ -9,7 +9,7 @@ import os
 import boto3
 import logging
 import re
-
+import json
 
 logger = logging.getLogger()
 logger.setLevel(logging.getLevelName(os.environ.get("DD_LOG_LEVEL", "INFO").upper()))
@@ -179,11 +179,13 @@ INCLUDE_AT_MATCH = get_env_var("INCLUDE_AT_MATCH", default=None)
 EXCLUDE_AT_MATCH = get_env_var("EXCLUDE_AT_MATCH", default=None)
 
 # DD API Key
-if "DD_API_KEY_SECRET_ARN" in os.environ:
+if "DD_API_KEY_SECRET_ARN" in os.environ and "DD_API_KEY_SECRET_KEY" in os.environ:
     SECRET_ARN = os.environ["DD_API_KEY_SECRET_ARN"]
-    DD_API_KEY = boto3.client("secretsmanager").get_secret_value(SecretId=SECRET_ARN)[
+    SECRET_KEY = os.environ["DD_API_KEY_SECRET_KEY"]
+    secretstring = boto3.client("secretsmanager").get_secret_value(SecretId=SECRET_ARN)[
         "SecretString"
     ]
+    DD_API_KEY=json.loads(secretstring)[SECRET_KEY]
 elif "DD_API_KEY_SSM_NAME" in os.environ:
     SECRET_NAME = os.environ["DD_API_KEY_SSM_NAME"]
     DD_API_KEY = boto3.client("ssm").get_parameter(
